@@ -48,7 +48,7 @@ class _HomeState extends State<Home> {
   }
   void fetchUsers() async {
     print('Api Fetched');
-    const url = 'https://randomuser.me/api/?results=100';
+    const url = 'https://randomuser.me/api/?results=1000';
     final uri = Uri.parse(url);
     final response = await http.get(uri);
     final body = response.body;
