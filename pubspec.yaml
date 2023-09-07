@@ -31,6 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.1.0
+  nepali_utils: ^3.0.3
+  marquee: ^2.2.3
 
 
   # The following adds the Cupertino Icons font to your application.
