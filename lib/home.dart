@@ -13,17 +13,18 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<String> userNames = [];
   int currentIndex = 0;
-  Timer? _scrollTimer;
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     fetchUsers();
+    _scrollController = ScrollController();
   }
 
   @override
   void dispose() {
-    _scrollTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -31,23 +32,24 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('API Call with Auto-Scrolling Text'),
+        title: Text('API Call '),
         backgroundColor: Colors.blueGrey,
       ),
       body: Container(
-        color: Colors.white54,
+        color: Colors.redAccent,
         child: SizedBox(
-          height: 40, // Set the desired height for the scrolling area
+          height: 40,
           child: ListView.builder(
+            controller: _scrollController,
             scrollDirection: Axis.horizontal,
-            itemCount: userNames.length * 2, // Double the length for looping effect
+            itemCount: userNames.length,
             itemBuilder: (context, index) {
-              final userName = userNames[index % userNames.length];
+              final userName = userNames[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text(
                   userName,
-                  style: TextStyle(fontSize: 16.0),
+                  style: TextStyle(fontSize: 30.0),
                 ),
               );
             },
@@ -80,15 +82,20 @@ class _HomeState extends State<Home> {
   }
 
   void startAutoScroll() {
-    const scrollDuration = Duration(seconds: 100); // Adjust the duration as needed
-
-    _scrollTimer = Timer.periodic(scrollDuration, (_) {
-      setState(() {
-        currentIndex++;
-        if (currentIndex >= userNames.length) {
-          currentIndex = 0;
+    const scrollDuration = Duration(seconds: 3);
+    Timer.periodic(scrollDuration, (_) {
+      if (_scrollController.hasClients) {
+        final maxScrollExtent = _scrollController.position.maxScrollExtent;
+        if (_scrollController.offset >= maxScrollExtent) {
+          _scrollController.jumpTo(0);
+        } else {
+          _scrollController.animateTo(
+            _scrollController.offset + 100, // Adjust the scrolling amount
+            duration: scrollDuration,
+            curve: Curves.linear,
+          );
         }
-      });
+      }
     });
   }
 }
