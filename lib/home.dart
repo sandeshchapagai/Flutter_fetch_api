@@ -12,14 +12,22 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   List<String> userNames = [];
-  int currentIndex = 0;
-  late ScrollController _scrollController;
+  List<int> numbers = [];
 
+  // int currentIndex = 1;
+  late ScrollController _scrollController;
+  int page = 1;
   @override
   void initState() {
     super.initState();
-    fetchUsers();
+
     _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+    fetchUsers(page);
+    for (int i = 1; i <= 200; i++) {
+      numbers.add(i);
+    }
+
   }
 
   @override
@@ -35,21 +43,30 @@ class _HomeState extends State<Home> {
         title: Text('API Call '),
         backgroundColor: Colors.blueGrey,
       ),
-      body: Container(
-        color: Colors.redAccent,
-        child: SizedBox(
-          height: 40,
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          color: Colors.white10,
           child: ListView.builder(
             controller: _scrollController,
-            scrollDirection: Axis.horizontal,
+            scrollDirection: Axis.vertical,
             itemCount: userNames.length,
             itemBuilder: (context, index) {
               final userName = userNames[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  userName,
-                  style: TextStyle(fontSize: 30.0),
+              final number=numbers[index];
+              return SizedBox(
+                height: 100,
+                child: Row(
+                  children: [
+                    Text(number.toString()+'.\t',
+                    style: TextStyle(
+                      fontSize: 25
+                    ),
+                    ),
+                    Text(userName,style: const TextStyle(fontSize: 30.0),
+                    ),
+                    // CircularProgressIndicator()
+                  ],
                 ),
               );
             },
@@ -59,10 +76,10 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void fetchUsers() async {
+  void fetchUsers(page) async {
     print('API Fetching...');
-    const url =
-        'https://newsdata.io/api/1/news?country=np&category=top&language=ne&apikey=pub_289961268fcc7c68fd65e762924c2c64a1a59';
+    const page=20;
+    const url ='https://randomuser.me/api/?results=$page';
     final uri = Uri.parse(url);
     final response = await http.get(uri);
 
@@ -71,31 +88,38 @@ class _HomeState extends State<Home> {
       final results = json['results'] as List<dynamic>;
 
       setState(() {
-        userNames = results.map((user) => user['title'].toString()).toList();
+        userNames = results.map((user) => user['name']['last'].toString()).toList();
       });
 
       print('Completed');
-      startAutoScroll();
+      // startAutoScroll();
     } else {
       print('Failed to fetch data. Status code: ${response.statusCode}');
     }
   }
-
-  void startAutoScroll() {
-    const scrollDuration = Duration(seconds: 3);
-    Timer.periodic(scrollDuration, (_) {
-      if (_scrollController.hasClients) {
-        final maxScrollExtent = _scrollController.position.maxScrollExtent;
-        if (_scrollController.offset >= maxScrollExtent) {
-          _scrollController.jumpTo(0);
-        } else {
-          _scrollController.animateTo(
-            _scrollController.offset + 100, // Adjust the scrolling amount
-            duration: scrollDuration,
-            curve: Curves.linear,
-          );
-        }
-      }
-    });
+  void _scrollListener() {
+    if (_scrollController.position.extentAfter == 0) {
+      // If we've reached the end of the list, load more data.
+      fetchUsers(++page);
+    }
   }
+
+
+// void startAutoScroll() {
+  //   const scrollDuration = Duration(seconds: 3);
+  //   Timer.periodic(scrollDuration, (_) {
+  //     if (_scrollController.hasClients) {
+  //       final maxScrollExtent = _scrollController.position.maxScrollExtent;
+  //       if (_scrollController.offset >= maxScrollExtent) {
+  //         _scrollController.jumpTo(0);
+  //       } else {
+  //         _scrollController.animateTo(
+  //           _scrollController.offset + 100, // Adjust the scrolling amount
+  //           duration: scrollDuration,
+  //           curve: Curves.linear,
+  //         );
+  //       }
+  //     }
+  //   });
+  // }
 }
