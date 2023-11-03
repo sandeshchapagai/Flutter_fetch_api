@@ -13,10 +13,10 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<String> userNames = [];
   List<int> numbers = [];
-
-  // int currentIndex = 1;
   late ScrollController _scrollController;
   int page = 1;
+  bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -27,7 +27,6 @@ class _HomeState extends State<Home> {
     for (int i = 1; i <= 200; i++) {
       numbers.add(i);
     }
-
   }
 
   @override
@@ -50,25 +49,31 @@ class _HomeState extends State<Home> {
           child: ListView.builder(
             controller: _scrollController,
             scrollDirection: Axis.vertical,
-            itemCount: userNames.length,
+            itemCount: userNames.length + 1,
             itemBuilder: (context, index) {
-              final userName = userNames[index];
-              final number=numbers[index];
-              return SizedBox(
-                height: 100,
-                child: Row(
-                  children: [
-                    Text(number.toString()+'.\t',
-                    style: TextStyle(
-                      fontSize: 25
-                    ),
-                    ),
-                    Text(userName,style: const TextStyle(fontSize: 30.0),
-                    ),
-                    // CircularProgressIndicator()
-                  ],
-                ),
-              );
+              if (index < userNames.length) {
+                final userName = userNames[index];
+                final number = numbers[index];
+                return SizedBox(
+                  height: 100,
+                  child: Row(
+                    children: [
+                      Text(
+                        number.toString() + '.\t',
+                        style: TextStyle(fontSize: 25),
+                      ),
+                      Text(
+                        userName,
+                        style: const TextStyle(fontSize: 30.0),
+                      ),
+                    ],
+                  ),
+                );
+              } else if (isLoading) {
+                return Center(child: CircularProgressIndicator());
+              } else {
+                return Container(); // Placeholder for the end of the list
+              }
             },
           ),
         ),
@@ -78,8 +83,9 @@ class _HomeState extends State<Home> {
 
   void fetchUsers(page) async {
     print('API Fetching...');
-    const page=20;
-    const url ='https://randomuser.me/api/?results=$page';
+    const pageSize =8;
+    const  page = 100;
+    const url = 'https://randomuser.me/api/?results=$pageSize&page=$page';
     final uri = Uri.parse(url);
     final response = await http.get(uri);
 
@@ -88,38 +94,24 @@ class _HomeState extends State<Home> {
       final results = json['results'] as List<dynamic>;
 
       setState(() {
-        userNames = results.map((user) => user['name']['last'].toString()).toList();
+        userNames.addAll(results.map((user) => user['name']['first'].toString()));
       });
 
       print('Completed');
-      // startAutoScroll();
+      isLoading = false; // Data is loaded
     } else {
       print('Failed to fetch data. Status code: ${response.statusCode}');
     }
   }
+
   void _scrollListener() {
-    if (_scrollController.position.extentAfter == 0) {
-      // If we've reached the end of the list, load more data.
-      fetchUsers(++page);
+    if (_scrollController.position.extentAfter == 0 && !isLoading) {
+      // If we've reached the end of the list and not already loading, load more data.
+      setState(() {
+        isLoading = true;
+        page++; // Increment the page
+      });
+      fetchUsers(page);
     }
   }
-
-
-// void startAutoScroll() {
-  //   const scrollDuration = Duration(seconds: 3);
-  //   Timer.periodic(scrollDuration, (_) {
-  //     if (_scrollController.hasClients) {
-  //       final maxScrollExtent = _scrollController.position.maxScrollExtent;
-  //       if (_scrollController.offset >= maxScrollExtent) {
-  //         _scrollController.jumpTo(0);
-  //       } else {
-  //         _scrollController.animateTo(
-  //           _scrollController.offset + 100, // Adjust the scrolling amount
-  //           duration: scrollDuration,
-  //           curve: Curves.linear,
-  //         );
-  //       }
-  //     }
-  //   });
-  // }
 }
